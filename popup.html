@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+</head>
+<body>
+  <div class="container">
+    <div class="header-container">
+      <div class="breadcrumb" id="breadcrumb">
+        <div class="breadcrumb-item" data-id="root">主页</div>
+        <!-- 面包屑导航将通过JavaScript动态添加 -->
+      </div>
+      <div class="header-buttons">
+        <button id="openInTabBtn" title="在新标签页中打开">
+          <i class="fas fa-external-link-alt"></i>
+        </button>
+        <button id="addCurrentPageBtn">
+          <i class="fas fa-plus"></i> 添加当前页面
+        </button>
+      </div>
+    </div>
+
+    <div class="tools-container">
+      <div class="desktop" id="toolsList">
+        <!-- 工具和文件夹将通过JavaScript动态添加 -->
+      </div>
+    </div>
+  </div>
+
+  <!-- 右键菜单 -->
+  <div class="context-menu" id="contextMenu" style="display: none;">
+    <!-- 右键菜单项将通过JavaScript动态添加 -->
+  </div>
+
+  <!-- 添加/编辑工具模态框 -->
+  <div class="modal" id="toolModal" style="display: none;">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div class="modal-title" id="modalTitle">添加工具</div>
+        <button class="modal-close" id="closeModal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-row">
+          <label for="toolName">名称</label>
+          <input type="text" id="toolName" placeholder="工具名称">
+        </div>
+        <div class="form-row">
+          <label for="toolUrl">网址</label>
+          <input type="text" id="toolUrl" placeholder="https://example.com">
+          <button id="fetchInfoBtn" class="small-btn" title="获取网页信息">
+            <i class="fas fa-sync-alt"></i>
+          </button>
+        </div>
+        <div class="form-row">
+          <label for="toolIcon">图标URL</label>
+          <input type="text" id="toolIcon" placeholder="图标URL (可选)">
+          <div class="icon-preview" id="toolIconPreview"></div>
+        </div>
+        <div class="form-row">
+          <label for="folderSelect">保存位置</label>
+          <select id="folderSelect">
+            <option value="root">根目录</option>
+            <!-- 文件夹选项将通过JavaScript动态添加 -->
+          </select>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button id="cancelToolBtn">取消</button>
+        <button id="saveToolBtn">保存</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 添加/编辑文件夹模态框 -->
+  <div class="modal" id="folderModal" style="display: none;">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div class="modal-title" id="folderModalTitle">新建文件夹</div>
+        <button class="modal-close" id="closeFolderModal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-row">
+          <label for="folderName">文件夹名称</label>
+          <input type="text" id="folderName" placeholder="文件夹名称">
+        </div>
+        <div class="form-row">
+          <label>文件夹图标</label>
+          <div class="icon-tabs">
+            <div class="icon-tab active" data-tab="preset">预设图标</div>
+            <div class="icon-tab" data-tab="custom">自定义图标</div>
+          </div>
+          <div class="icon-tab-content" id="presetIconTab">
+            <div class="icon-selector">
+              <div class="icon-option selected" data-icon="fas fa-folder">
+                <i class="fas fa-folder"></i>
+              </div>
+              <div class="icon-option" data-icon="fas fa-folder-open">
+                <i class="fas fa-folder-open"></i>
+              </div>
+              <div class="icon-option" data-icon="fas fa-archive">
+                <i class="fas fa-archive"></i>
+              </div>
+              <div class="icon-option" data-icon="fas fa-book">
+                <i class="fas fa-book"></i>
+              </div>
+              <div class="icon-option" data-icon="fas fa-briefcase">
+                <i class="fas fa-briefcase"></i>
+              </div>
+              <div class="icon-option" data-icon="fas fa-code">
+                <i class="fas fa-code"></i>
+              </div>
+              <div class="icon-option" data-icon="fas fa-cog">
+                <i class="fas fa-cog"></i>
+              </div>
+              <div class="icon-option" data-icon="fas fa-file">
+                <i class="fas fa-file"></i>
+              </div>
+              <div class="icon-option" data-icon="fas fa-heart">
+                <i class="fas fa-heart"></i>
+              </div>
+              <div class="icon-option" data-icon="fas fa-home">
+                <i class="fas fa-home"></i>
+              </div>
+              <div class="icon-option" data-icon="fas fa-image">
+                <i class="fas fa-image"></i>
+              </div>
+              <div class="icon-option" data-icon="fas fa-link">
+                <i class="fas fa-link"></i>
+              </div>
+              <div class="icon-option" data-icon="fas fa-music">
+                <i class="fas fa-music"></i>
+              </div>
+              <div class="icon-option" data-icon="fas fa-shopping-cart">
+                <i class="fas fa-shopping-cart"></i>
+              </div>
+              <div class="icon-option" data-icon="fas fa-star">
+                <i class="fas fa-star"></i>
+              </div>
+              <div class="icon-option" data-icon="fas fa-video">
+                <i class="fas fa-video"></i>
+              </div>
+            </div>
+          </div>
+          <div class="icon-tab-content" id="customIconTab" style="display:none">
+            <div class="custom-icon-upload">
+              <div class="form-row">
+                <label for="folderIconUrl">图标URL</label>
+                <input type="text" id="folderIconUrl" placeholder="输入图标URL">
+              </div>
+              <div class="form-row">
+                <label>或上传图标</label>
+                <input type="file" id="folderIconFile" accept="image/*">
+              </div>
+              <div class="icon-preview" id="folderIconPreview"></div>
+            </div>
+          </div>
+          <input type="hidden" id="folderIconClass" value="fas fa-folder">
+          <input type="hidden" id="folderIconType" value="preset">
+          <input type="hidden" id="folderIconData" value="">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button id="cancelFolderBtn">取消</button>
+        <button id="saveFolderBtn">保存</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html> 
