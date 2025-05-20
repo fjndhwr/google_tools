@@ -4,7 +4,7 @@
   "version": "1.0",
   "key":"ekcjflmiopoknkdangdnogecfjfadnnb",
   "description": "将网页添加为带图标的工具，并可以分类存储在文件夹中",
-  "permissions": ["storage", "tabs", "activeTab"],
+  "permissions": ["storage", "tabs", "activeTab","identity"],
   "host_permissions": ["<all_urls>"],
   "action": {
     "default_popup": "popup.html",
