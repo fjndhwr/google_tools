@@ -87,6 +87,7 @@ document.addEventListener('DOMContentLoaded', function() {
     loadData().then(data => {
       renderCurrentFolder(data);
       updateBreadcrumb();
+      updateDataStatus();
       
       // 同步访问历史
       syncAccessHistory();
@@ -839,6 +840,7 @@ document.addEventListener('DOMContentLoaded', function() {
     await saveData(data);
     hideModal(toolModal);
     renderCurrentFolder(data);
+    updateDataStatus();
   }
   
   // 保存文件夹更改
@@ -900,6 +902,7 @@ document.addEventListener('DOMContentLoaded', function() {
     hideModal(folderModal);
     renderCurrentFolder(data);
     updateBreadcrumb();
+    updateDataStatus();
   }
   
   // 删除文件夹
@@ -1231,5 +1234,244 @@ document.addEventListener('DOMContentLoaded', function() {
         }
       }
     });
+  }
+  
+  // 添加数据状态显示功能
+  function updateDataStatus() {
+    loadData().then(data => {
+      const foldersCount = Object.keys(data.folders).length;
+      const toolsCount = Object.keys(data.tools).length;
+      
+      // 获取或创建状态显示元素
+      let statusElement = document.getElementById('dataStatus');
+      if (!statusElement) {
+        statusElement = document.createElement('div');
+        statusElement.id = 'dataStatus';
+        statusElement.className = 'data-status';
+        
+        // 添加到工具栏
+        const toolbar = document.querySelector('.toolbar');
+        if (toolbar) {
+          toolbar.appendChild(statusElement);
+        }
+        
+        // 添加样式
+        const style = document.createElement('style');
+        style.textContent = `
+          .data-status {
+            margin-left: auto;
+            font-size: 12px;
+            color: #666;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+          }
+          .data-status i {
+            font-size: 14px;
+          }
+        `;
+        document.head.appendChild(style);
+      }
+      
+      // 更新状态信息
+      statusElement.innerHTML = `
+        <span><i class="fas fa-folder"></i> ${foldersCount} 个文件夹</span>
+        <span><i class="fas fa-tools"></i> ${toolsCount} 个工具</span>
+      `;
+    });
+  }
+
+  // 添加调试工具，帮助诊断同步问题
+  function addDebugTools() {
+    // 创建调试面板
+    const debugPanel = document.createElement('div');
+    debugPanel.id = 'debugPanel';
+    debugPanel.className = 'debug-panel';
+    debugPanel.style.display = 'none'; // 默认隐藏
+    
+    // 添加调试按钮到工具栏
+    const toolbar = document.querySelector('.toolbar');
+    if (toolbar) {
+      const debugButton = document.createElement('button');
+      debugButton.className = 'debug-button';
+      debugButton.innerHTML = '<i class="fas fa-bug"></i> 调试';
+      debugButton.title = '显示调试工具';
+      debugButton.addEventListener('click', () => {
+        debugPanel.style.display = debugPanel.style.display === 'none' ? 'block' : 'none';
+      });
+      
+      toolbar.appendChild(debugButton);
+      
+      // 添加调试面板到页面
+      document.body.appendChild(debugPanel);
+      
+      // 添加调试功能
+      debugPanel.innerHTML = `
+        <h3>调试工具</h3>
+        <div class="debug-actions">
+          <button id="checkStorageBtn">检查存储状态</button>
+          <button id="clearStorageBtn">清除所有数据</button>
+          <button id="exportRawDataBtn">导出原始数据</button>
+        </div>
+        <div id="debugOutput" class="debug-output"></div>
+      `;
+      
+      // 添加样式
+      const style = document.createElement('style');
+      style.textContent = `
+        .debug-panel {
+          position: fixed;
+          bottom: 20px;
+          right: 20px;
+          width: 400px;
+          max-height: 300px;
+          background-color: #f8f9fa;
+          border: 1px solid #ddd;
+          border-radius: 4px;
+          padding: 10px;
+          z-index: 1000;
+          overflow: auto;
+          box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .debug-actions {
+          display: flex;
+          gap: 8px;
+          margin-bottom: 10px;
+        }
+        .debug-actions button {
+          padding: 4px 8px;
+          font-size: 12px;
+          background-color: #f1f3f4;
+          border: 1px solid #ddd;
+          border-radius: 3px;
+          cursor: pointer;
+        }
+        .debug-output {
+          font-family: monospace;
+          font-size: 12px;
+          white-space: pre-wrap;
+          background-color: #f1f3f4;
+          padding: 8px;
+          border-radius: 3px;
+          max-height: 200px;
+          overflow: auto;
+        }
+        .debug-button {
+          display: flex;
+          align-items: center;
+          gap: 5px;
+          padding: 6px 12px;
+          background-color: #f1f3f4;
+          color: #333;
+          border: 1px solid #ddd;
+          border-radius: 4px;
+          cursor: pointer;
+          font-size: 14px;
+        }
+      `;
+      document.head.appendChild(style);
+      
+      // 添加调试功能实现
+      document.getElementById('checkStorageBtn').addEventListener('click', async () => {
+        const output = document.getElementById('debugOutput');
+        output.textContent = '正在检查存储状态...';
+        
+        try {
+          // 检查分片信息
+          const chunkInfo = await new Promise(resolve => {
+            chrome.storage.sync.get(['data_chunks', 'data_timestamp'], resolve);
+          });
+          
+          // 检查旧格式数据
+          const oldData = await new Promise(resolve => {
+            chrome.storage.sync.get(['folders', 'tools', 'lastSync'], resolve);
+          });
+          
+          // 检查所有分片
+          const chunkKeys = [];
+          if (chunkInfo.data_chunks) {
+            for (let i = 0; i < chunkInfo.data_chunks; i++) {
+              chunkKeys.push(`data_chunk_${i}`);
+            }
+          }
+          
+          const chunks = await new Promise(resolve => {
+            chrome.storage.sync.get(chunkKeys, resolve);
+          });
+          
+          // 输出结果
+          output.textContent = JSON.stringify({
+            chunkInfo,
+            oldData: {
+              foldersCount: Object.keys(oldData.folders || {}).length,
+              toolsCount: Object.keys(oldData.tools || {}).length,
+              lastSync: oldData.lastSync
+            },
+            chunks: {
+              expected: chunkInfo.data_chunks || 0,
+              actual: Object.keys(chunks).length,
+              keys: Object.keys(chunks)
+            }
+          }, null, 2);
+        } catch (error) {
+          output.textContent = `检查存储状态失败: ${error.message}`;
+        }
+      });
+      
+      document.getElementById('clearStorageBtn').addEventListener('click', async () => {
+        if (confirm('确定要清除所有数据吗？此操作不可恢复！')) {
+          const output = document.getElementById('debugOutput');
+          output.textContent = '正在清除数据...';
+          
+          try {
+            // 获取所有存储的键
+            const allKeys = await new Promise(resolve => {
+              chrome.storage.sync.get(null, data => {
+                resolve(Object.keys(data));
+              });
+            });
+            
+            // 清除所有数据
+            await chrome.storage.sync.clear();
+            
+            output.textContent = `已清除 ${allKeys.length} 个数据项`;
+            
+            // 刷新界面
+            loadData().then(data => {
+              renderCurrentFolder(data);
+              updateBreadcrumb();
+              updateDataStatus();
+            });
+          } catch (error) {
+            output.textContent = `清除数据失败: ${error.message}`;
+          }
+        }
+      });
+      
+      document.getElementById('exportRawDataBtn').addEventListener('click', async () => {
+        const output = document.getElementById('debugOutput');
+        output.textContent = '正在导出原始数据...';
+        
+        try {
+          // 获取所有存储的数据
+          const allData = await new Promise(resolve => {
+            chrome.storage.sync.get(null, resolve);
+          });
+          
+          // 创建下载链接
+          const dataStr = JSON.stringify(allData, null, 2);
+          const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+          
+          const exportLink = document.createElement('a');
+          exportLink.setAttribute('href', dataUri);
+          exportLink.setAttribute('download', 'chrome_storage_backup.json');
+          exportLink.click();
+          
+          output.textContent = '原始数据已导出';
+        } catch (error) {
+          output.textContent = `导出数据失败: ${error.message}`;
+        }
+      });
+    }
   }
 }); 
